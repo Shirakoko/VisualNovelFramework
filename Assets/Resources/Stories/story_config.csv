@@ -1,0 +1,15 @@
+字段名,Type,nodeId,nextNodeId,backgroundId,characters,,dialogs,,questionText,choices,
+解释,节点类型,节点Id,下个节点Id,背景图Id,出场角色,,对话,,问题文本,选项,
+数据类型,string,string,string,string,List<CharacterState>,,List<DialogLine>,,string,List<Choice>,
+,,,,,,,,,,,
+#,DialogNode,start,mainChoice,BG_Grey,Ch_usagi,"-800, -100",兔子,"今天天气不错呢！",,,
+,,,,,Ch_chiikawa,"800, -100",小可爱,"是啊，要一起去冒险吗？",,,
+,,,,,Ch_hachi,"-600, -100",,,,,
+#,ChoiceNode,mainChoice,,BG_Red,Ch_usagi,"-200, 0",,,"去做什么好呢？","去森林探险。",forest
+,,,,,Ch_chiikawa,"0, 0",,,,"回家休息。",home
+,,,,,Ch_hachi,"200, 0",,,,,
+#,DialogNode,forest,,BG_Forest,Ch_usagi,"-150, -50",小八,"森林里有好多蘑菇！",,,
+,,,,,Ch_hachi,"150, -50",兔子,"小心有毒的蘑菇哦！",,,
+,,,,,,,小八,"我们还是快点回家吧。",,,
+#,DialogNode,home,,BG_Home,Ch_chiikawa,"0, 0",小可爱,"还是家里最舒服了~",,,
+,,,,,,,,"不知道小八和兔子什么时候回来呢。",,,
