@@ -1,26 +1,20 @@
+using System.IO;
 using UnityEngine;
 
 public class StoryInitializer
 {
-    public StoryTree InitializeStory()
+    public StoryTree InitializeStory(string storyFilePath)
     {
-        // 直接从Resources加载CSV
-        TextAsset csvFile = Resources.Load<TextAsset>("Stories/story_config");
-        if (csvFile == null)
-        {
-            Debug.LogError("CSV文件未找到！请检查路径：Assets/Resources/Stories/story_config.csv");
-            return null;
-        }
-        return StoryCsvParser.ParseCsvToStory(csvFile.text);
-
-        // 方法2：从外部路径加载（适用于运行时动态加载）
-        // string csvPath = Path.Combine(Application.streamingAssetsPath, "story_config.csv");
-        // if (!File.Exists(csvPath)) {
-        //     Debug.LogError("CSV文件未找到！路径：" + csvPath);
+        // 从StreamingAssets加载CSV
+        // TextAsset csvFile = Resources.Load<TextAsset>(storyFilePath);
+        // if (csvFile == null)
+        // {
+        //     Debug.LogError($"CSV文件未找到！请检查路径：Assets/Resources/{storyFilePath}.csv");
         //     return null;
         // }
-        // string csvText = File.ReadAllText(csvPath);
-        // return AdvancedStoryCsvParser.ParseCsvToStory(csvText);
+        string path = Path.Combine(Application.streamingAssetsPath, storyFilePath);
+        string csvText = File.ReadAllText(path);
+        return StoryCsvParser.ParseCsvToStory(csvText);
     }
 
     #region 废弃的代码化创建方式

@@ -151,6 +151,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1914203a7fefd6143aece6ee0c92b400, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  storyFilePath: Stories/story_config.csv
   backgroundManager: {fileID: 139324984}
   characterManager: {fileID: 1852102692}
   dialogManager: {fileID: 982288409}

@@ -5,6 +5,10 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
+
+    [Header("故事Csv文件路径")]
+    [Tooltip("放在StreamingAssets路径下，一定要加后缀名")]
+    public string storyFilePath = "Stories/story_config.csv";
     
     public BackgroundManager backgroundManager;
     public CharacterManager characterManager;
@@ -33,7 +37,7 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         StoryInitializer initializer = new StoryInitializer();
-        currentStory = initializer.InitializeStory();
+        currentStory = initializer.InitializeStory(storyFilePath);
 
         if (currentStory != null)
         {
