@@ -164,7 +164,11 @@ public static class StoryCsvParser
 
     private static string GetFieldValue(Dictionary<string, int> fieldIndices, List<string> fields, string fieldName)
     {
-        if (fieldIndices.ContainsKey(fieldName) && fields.Count > fieldIndices[fieldName])
+        if (!fieldIndices.ContainsKey(fieldName))
+        {
+            Debug.LogError($"字段: {fieldName}在Csv首行中不存在，请检查csv格式是否正确");
+        }
+        if (fields.Count > fieldIndices[fieldName])
         {
             return fields[fieldIndices[fieldName]];
         }
