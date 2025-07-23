@@ -1,4 +1,4 @@
-字段名,Type,nodeId,nextNodeId,backgroundId,characters,,dialogs,,questionText,choices,
+字段名,type,nodeId,nextNodeId,backgroundId,character,position,speaker,content,questionText,choices,choiceNext
 解释,节点类型,节点Id,下个节点Id,背景图Id,出场角色,,对话,,问题文本,选项,
 数据类型,string,string,string,string,List<CharacterState>,,List<DialogLine>,,string,List<Choice>,
 ,,,,,,,,,,,

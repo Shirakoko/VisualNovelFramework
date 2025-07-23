@@ -1,15 +1,28 @@
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 
-public class StoryCsvParser
+public static class StoryCsvParser
 {
+    /** 最少字段个数 */
+    public const int MIN_FIELD_COUNT = 5;
+
+    /** */
+
     public static StoryTree ParseCsvToStory(string csvText)
     {
         var lines = csvText.Split('\n')
             .Where(line => !string.IsNullOrWhiteSpace(line.Trim()))
             .ToList();
+
+
+        var headerFields = ParseCsvLine(lines[0]);
+        var fieldIndices = new Dictionary<string, int>();
+        for (int i = 0; i < headerFields.Count; i++) { fieldIndices[headerFields[i]] = i; }
+
+        // 移除第一行（表头）
+        lines.RemoveAt(0);
 
         var nodes = new Dictionary<string, Node>();
         Node rootNode = null;
@@ -38,50 +51,51 @@ public class StoryCsvParser
         foreach (var block in nodeBlocks)
         {
             var firstLineFields = ParseCsvLine(block[0]);
-            if (firstLineFields.Count <= 5) continue;
+            if (firstLineFields.Count <= MIN_FIELD_COUNT) continue;
 
-            // 所有节点共有信息
-            string nodeType = firstLineFields[1]; // 节点类型
-            string nodeId = firstLineFields[2]; // 节点Id
-            string backgroundId = firstLineFields[4]; // 节点背景图片
+            // 与#同行的星系
+            string nodeType = GetFieldValue(fieldIndices, firstLineFields, "type"); // 节点类型
+            string nodeId = GetFieldValue(fieldIndices, firstLineFields, "nodeId"); // 节点Id
+            string backgroundId = GetFieldValue(fieldIndices, firstLineFields, "backgroundId"); // 节点背景图片
+            
+
+            string nextNodeId = GetFieldValue(fieldIndices, firstLineFields, "nextNodeId");
+            string questionText = GetFieldValue(fieldIndices, firstLineFields, "questionText");
+
+            // 需要遍历多行读取的信息
             var allCharacterFields = new List<(string characterId, string position)>();
-
-            string nextNodeId = "";
             var allDialogFields = new List<(string speaker, string content)>();
             var allChoiceFields = new List<(string choiceText, string nextNodeId)>();
-            string questionText = "";
 
             foreach (var line in block)
             {
                 var fields = ParseCsvLine(line);
 
-                if (fields.Count <= 5) continue;
+                if (fields.Count <= MIN_FIELD_COUNT) continue;
 
-                // 解析角色信息（索引5、6）
-                if (fields.Count > 6 && !string.IsNullOrEmpty(fields[5]))
+                // 解析角色信息
+                var characterId = GetFieldValue(fieldIndices, fields, "character");
+                var position = GetFieldValue(fieldIndices, fields, "position");
+                if (!string.IsNullOrEmpty(characterId))
                 {
-                    allCharacterFields.Add((fields[5], fields[6]));
+                    if (string.IsNullOrEmpty(position)) { position = "0, 0"; }
+                    allCharacterFields.Add((characterId, position));
                 }
 
-                // 解析下一个节点Id（索引3）和对话信息（索引7、8），仅DialogNode
-                if (nodeType == "DialogNode" && fields.Count > 8 && !string.IsNullOrEmpty(fields[7]))
+                // 解析对话信息，仅DialogNode
+                if (nodeType == "DialogNode")
                 {
-                    nextNodeId = firstLineFields[3];
-                    allDialogFields.Add((fields[7], fields[8]));
+                    var speaker = GetFieldValue(fieldIndices, fields, "speaker");
+                    var content = GetFieldValue(fieldIndices, fields, "content");
+                    if(!string.IsNullOrEmpty(speaker) && !string.IsNullOrEmpty(content)) { allDialogFields.Add((speaker, content)); }
                 }
 
-                // 解析问题文本（索引9）和选项（索引10、11），仅ChoiceNode专用
+                // 解析选项，仅ChoiceNode专用
                 if (nodeType == "ChoiceNode")
                 {
-                    if (fields.Count > 9 && !string.IsNullOrEmpty(fields[9]))
-                    {
-                        questionText = fields[9];
-                    }
-
-                    if (fields.Count > 11 && !string.IsNullOrEmpty(fields[10]))
-                    {
-                        allChoiceFields.Add((fields[10], fields[11]));
-                    }
+                    var choice = GetFieldValue(fieldIndices, fields, "choices");
+                    var choiceNextNodeId = GetFieldValue(fieldIndices, fields, "choiceNext");
+                    if (!string.IsNullOrEmpty(choice) && !string.IsNullOrEmpty(choiceNextNodeId)){ allChoiceFields.Add((choice, choiceNextNodeId)); } 
                 }
             }
 
@@ -148,6 +162,15 @@ public class StoryCsvParser
         return story;
     }
 
+    private static string GetFieldValue(Dictionary<string, int> fieldIndices, List<string> fields, string fieldName)
+    {
+        if (fieldIndices.ContainsKey(fieldName) && fields.Count > fieldIndices[fieldName])
+        {
+            return fields[fieldIndices[fieldName]];
+        }
+        return "";
+    }
+
     private static List<string> ParseCsvLine(string line)
     {
         var fields = new List<string>();
@@ -164,15 +187,15 @@ public class StoryCsvParser
         fields.Add(currentFields.Trim()); // 加入最后一个字段
         return fields;
     }
-    
+
     private static Vector2 ParsePosition(string positionStr)
     {
         if (string.IsNullOrEmpty(positionStr)) return Vector2.zero;
-        
+
         var parts = positionStr.Split(',');
         if (parts.Length != 2) return Vector2.zero;
 
-        if (int.TryParse(parts[0].Trim(), out int x) && 
+        if (int.TryParse(parts[0].Trim(), out int x) &&
             int.TryParse(parts[1].Trim(), out int y))
         {
             return new Vector2(x, y);
