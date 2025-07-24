@@ -152,6 +152,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   storyFilePath: Stories/story_config.csv
+  typingSpeed: 0.05
   backgroundManager: {fileID: 139324984}
   characterManager: {fileID: 1852102692}
   dialogManager: {fileID: 982288409}
