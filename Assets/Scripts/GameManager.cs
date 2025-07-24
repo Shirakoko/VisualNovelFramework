@@ -11,7 +11,7 @@ public class GameManager : MonoBehaviour
     public string storyFilePath = "Stories/story_config.csv";
 
     [Header("打字间隔")]
-    [Tooltip("文本逐个出现的时间间隔")]
+    [Tooltip("文本逐个出现的时间间隔（秒）")]
     public float typingSpeed = 0.05f;
 
     [Space(10)]
@@ -21,6 +21,17 @@ public class GameManager : MonoBehaviour
     public ChoiceManager choiceManager;
 
     private StoryTree currentStory;
+
+    #region 调试字段
+    [SerializeField]
+    [Header("启用调试工具")]
+    private bool showDebugPanel = true;
+
+    private string debugTargetNodeId = "";
+    private LinkedList<string> jumpHistory = new LinkedList<string>();
+    private const int MAX_HISTORY = 5; // 最大历史记录数
+    // private GUIStyle HEADSTYLE; // 调试面板标题样式
+    #endregion
 
     /** 当前节点 */
     private Node currentNode;
@@ -49,6 +60,40 @@ public class GameManager : MonoBehaviour
             Debug.Log("故事加载成功！");
             StartStory(currentStory);
         }
+    }
+
+    // 运行时调试
+    private void OnGUI()
+    {
+        if (!showDebugPanel || !Application.isPlaying) return;
+
+        GUILayout.BeginArea(new Rect(10, 10, 350, 275), GUI.skin.box);
+        GUILayout.Label("<b>故事调试面板</b>", new GUIStyle(GUI.skin.label) { richText = true, fontSize = 16, alignment = TextAnchor.MiddleCenter });
+
+        // 快速跳转
+        GUILayout.Label("<color=cyan>快速跳转</color>", new GUIStyle(GUI.skin.label) { richText = true });
+        GUILayout.BeginHorizontal(GUI.skin.box);
+        debugTargetNodeId = GUILayout.TextField(debugTargetNodeId, GUILayout.Width(200));
+        GUILayout.FlexibleSpace();
+        if (GUILayout.Button("跳转", GUILayout.Width(60))) { DebugJumpToNode(debugTargetNodeId); }
+        GUILayout.EndHorizontal();
+
+        // 当前节点
+        GUILayout.Label($"<color=cyan>当前节点</color> <color=yellow>{currentNode?.nodeId ?? "无"}</color>", new GUIStyle(GUI.skin.label) { richText = true });
+
+        // 历史记录
+        GUILayout.Label("<color=cyan>跳转历史</color>", new GUIStyle(GUI.skin.label){ richText = true } );
+        if (jumpHistory.Count > 0)
+        {
+            foreach (var id in jumpHistory)
+            {
+                if (GUILayout.Button(id, GUI.skin.label))
+                {
+                    debugTargetNodeId = id;
+                }
+            }
+        }
+        GUILayout.EndArea();
     }
 
     /** 开启故事 */
@@ -85,10 +130,13 @@ public class GameManager : MonoBehaviour
     /** 显示当前对话 */
     private void ShowCurrentDialog(DialogNode node)
     {
-        if (currentDialogIndex < node.dialogs.Count) {
+        if (currentDialogIndex < node.dialogs.Count)
+        {
             var line = node.dialogs[currentDialogIndex];
             dialogManager.DisplayDialog(line.speakerDisplayName, line.content);
-        } else {
+        }
+        else
+        {
             NextNode();
         }
     }
@@ -109,7 +157,7 @@ public class GameManager : MonoBehaviour
         if (currentNode is DialogNode dialogNode)
         {
             string nextNodeId = dialogNode.nextNodeId;
-            if(nextNodeId == null) { Debug.LogWarning($"不存在下一个节点Id"); return; }
+            if (nextNodeId == null) { Debug.LogWarning($"不存在下一个节点Id"); return; }
             var nextNode = currentStory.GetNodeById(nextNodeId);
             if (nextNode != null) { ProcessNode(nextNode); }
             else { Debug.LogWarning($"下一个节点为null, Id: {dialogNode.nextNodeId}"); }
@@ -122,18 +170,46 @@ public class GameManager : MonoBehaviour
         if (currentNode is ChoiceNode choiceNode && choiceIndex < choiceNode.choices.Count)
         {
             string nextNodeId = choiceNode.choices[choiceIndex].nextNodeId;
-            if(nextNodeId == null) { Debug.LogWarning($"不存在下一个节点Id"); return; }
+            if (nextNodeId == null) { Debug.LogWarning($"不存在下一个节点Id"); return; }
             var nextNode = currentStory.GetNodeById(nextNodeId);
-            if (nextNode != null) { ProcessNode(nextNode); } 
+            if (nextNode != null) { ProcessNode(nextNode); }
             else { Debug.LogWarning($"下一个节点为null, Id: {nextNodeId}"); }
         }
     }
 
-    /** 跳转到指定nodeId的节点 */
-    public void GoToNode(string nodeId)
+    // 调试跳转方法
+    private void DebugJumpToNode(string nodeId)
     {
-        var node = currentStory.GetNodeById(nodeId);
-        if (node != null) { ProcessNode(node); }
-        else { Debug.LogWarning($"节点为null, Id: {nodeId}"); }
+        if (string.IsNullOrEmpty(nodeId)) return;
+
+        var node = currentStory?.GetNodeById(nodeId);
+        if (node != null)
+        {
+            ProcessNode(node);
+            // 添加到历史记录
+            AddToHistory(nodeId);
+            Debug.Log($"调试跳转成功 -> {nodeId}");
+        }
+        else
+        {
+            Debug.LogError($"节点或故事树不存在: {nodeId}");
+        }
+    }
+
+    private void AddToHistory(string nodeId)
+    {
+        // 如果已经存在，先移除旧记录
+        if (jumpHistory.Contains(nodeId))
+        {
+            jumpHistory.Remove(nodeId);
+        }
+        
+        jumpHistory.AddFirst(nodeId);
+        
+        // 保持最大记录数
+        while (jumpHistory.Count > MAX_HISTORY)
+        {
+            jumpHistory.RemoveLast();
+        }
     }
 }
