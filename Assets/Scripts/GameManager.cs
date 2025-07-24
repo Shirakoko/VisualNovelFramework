@@ -9,7 +9,12 @@ public class GameManager : MonoBehaviour
     [Header("故事Csv文件路径")]
     [Tooltip("放在StreamingAssets路径下，一定要加后缀名")]
     public string storyFilePath = "Stories/story_config.csv";
-    
+
+    [Header("打字间隔")]
+    [Tooltip("文本逐个出现的时间间隔")]
+    public float typingSpeed = 0.05f;
+
+    [Space(10)]
     public BackgroundManager backgroundManager;
     public CharacterManager characterManager;
     public DialogManager dialogManager;

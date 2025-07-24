@@ -6,12 +6,6 @@ public class StoryInitializer
     public StoryTree InitializeStory(string storyFilePath)
     {
         // 从StreamingAssets加载CSV
-        // TextAsset csvFile = Resources.Load<TextAsset>(storyFilePath);
-        // if (csvFile == null)
-        // {
-        //     Debug.LogError($"CSV文件未找到！请检查路径：Assets/Resources/{storyFilePath}.csv");
-        //     return null;
-        // }
         string path = Path.Combine(Application.streamingAssetsPath, storyFilePath);
         string csvText = File.ReadAllText(path);
         return StoryCsvParser.ParseCsvToStory(csvText);

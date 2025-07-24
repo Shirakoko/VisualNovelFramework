@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -20,6 +21,12 @@ public class DialogManager : MonoBehaviour
     [Header("对话框面板")]
     public GameObject dialogPanel;
 
+    private string currentContent; // 记录当前对话内容
+
+    private bool isTyping; // 当前是否正在打字
+
+    private Coroutine typingCoroutine; // 打字效果协程
+
     void Start()
     {
         // 绑定下一句按钮的响应函数
@@ -29,10 +36,32 @@ public class DialogManager : MonoBehaviour
     /** 显示对话框 */
     public void DisplayDialog(string speakerName, string content)
     {
+        // 先停止原来正在进行的打字效果
+        if (isTyping)
+        {
+            StopCoroutine(typingCoroutine);
+            dialogText.text = currentContent;
+            isTyping = false;
+        }
+
         dialogPanel.SetActive(true);
         speakerNameText.text = speakerName;
-        dialogText.text = content;
-        //TODO 文字打字机动效待做
+        currentContent = content;
+
+        // 开始打字
+        typingCoroutine = StartCoroutine(TypeText(content, GameManager.Instance.typingSpeed));
+    }
+
+    IEnumerator TypeText(string text, float typingSpeed) {
+        isTyping = true;
+        dialogText.text = ""; // 先清空文本
+        foreach (char c in text.ToCharArray())
+        {
+            dialogText.text += c; // 逐个添加字符
+            yield return new WaitForSeconds(typingSpeed);
+        }
+
+        isTyping = false;
     }
     
     /** 隐藏对话框 */
