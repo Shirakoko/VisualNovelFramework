@@ -27,7 +27,7 @@ public class DialogManager : MonoBehaviour
 
     private Coroutine typingCoroutine; // 打字效果协程
 
-    void Start()
+    private void Start()
     {
         // 绑定下一句按钮的响应函数
         nextButton.onClick.AddListener(GameManager.Instance.NextDialogLine);

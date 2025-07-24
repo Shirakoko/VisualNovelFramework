@@ -15,7 +15,7 @@ public class ChoiceManager : MonoBehaviour
     public Button choiceButtonPrefab;
 
     [Header("所有选项按钮父节点")]
-    [Tooltip("可挂载GridLayoutGroup和ContentSizeFilter让选项自适应")]
+    [Tooltip("建议挂载GridLayoutGroup和ContentSizeFilter让选项自适应")]
     public Transform choicesContainer;
     
     private List<Button> currentChoiceButtons = new List<Button>();
@@ -42,7 +42,7 @@ public class ChoiceManager : MonoBehaviour
             var choice = node.choices[i];
 
             // 动态生成按钮物体
-            var buttonObj = Instantiate<Button>(choiceButtonPrefab, choicesContainer);
+            var buttonObj = Instantiate(choiceButtonPrefab, choicesContainer);
             var button = buttonObj.GetComponent<Button>();
             button.GetComponentInChildren<Text>().text = choice.choiceText;
 

@@ -19,6 +19,7 @@ public class GameManager : MonoBehaviour
     public CharacterManager characterManager;
     public DialogManager dialogManager;
     public ChoiceManager choiceManager;
+    public ProcessedManager processedManager;
 
     private StoryTree currentStory;
 
@@ -30,13 +31,15 @@ public class GameManager : MonoBehaviour
     private string debugTargetNodeId = "";
     private LinkedList<string> jumpHistory = new LinkedList<string>();
     private const int MAX_HISTORY = 5; // 最大历史记录数
-    // private GUIStyle HEADSTYLE; // 调试面板标题样式
     #endregion
 
     /** 当前节点 */
     private Node currentNode;
     /** 当前对话Id */
     private int currentDialogIndex;
+
+    /** 记录已经走过的节点 */
+    private List<(string Speaker, string Content)> processedDialogs = new List<(string Speaker, string Content)>();
 
     private void Awake()
     {
@@ -99,6 +102,8 @@ public class GameManager : MonoBehaviour
     /** 开启故事 */
     public void StartStory(StoryTree story)
     {
+        processedManager.HideProcessedDialogs();
+
         currentStory = story;
         currentNode = story.rootNode;
         ProcessNode(currentNode);
@@ -150,12 +155,18 @@ public class GameManager : MonoBehaviour
             ShowCurrentDialog(dialogNode);
         }
     }
+    
 
     /** 下一个节点 */
     public void NextNode()
     {
         if (currentNode is DialogNode dialogNode)
         {
+            // 把当前节点的所有对话加入已经历的对话
+            foreach(var dialog in dialogNode.dialogs) {
+                processedDialogs.Add((Speaker: dialog.speakerDisplayName, Content: dialog.content));
+            }
+
             string nextNodeId = dialogNode.nextNodeId;
             if (nextNodeId == null) { Debug.LogWarning($"不存在下一个节点Id"); return; }
             var nextNode = currentStory.GetNodeById(nextNodeId);
@@ -169,12 +180,22 @@ public class GameManager : MonoBehaviour
     {
         if (currentNode is ChoiceNode choiceNode && choiceIndex < choiceNode.choices.Count)
         {
+            // 把当前节点的选项问题和玩家选择都加入已经历的对话
+            processedDialogs.Add((Speaker: "面临选择", Content: choiceNode.questionText));
+            processedDialogs.Add((Speaker: "你的选择", Content: choiceNode.choices[choiceIndex].choiceText));
             string nextNodeId = choiceNode.choices[choiceIndex].nextNodeId;
+        
             if (nextNodeId == null) { Debug.LogWarning($"不存在下一个节点Id"); return; }
             var nextNode = currentStory.GetNodeById(nextNodeId);
-            if (nextNode != null) { ProcessNode(nextNode); }
+            if (nextNode != null){ ProcessNode(nextNode); }
             else { Debug.LogWarning($"下一个节点为null, Id: {nextNodeId}"); }
         }
+    }
+
+    /** 打开剧情回顾 */
+    public void ShowProcessedPanel()
+    {
+        processedManager.ShowProcessedDialogs(processedDialogs);
     }
 
     // 调试跳转方法
