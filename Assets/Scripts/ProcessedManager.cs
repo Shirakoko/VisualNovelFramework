@@ -36,8 +36,9 @@ public class ProcessedManager : MonoBehaviour
         // 清除旧的对话条目
         foreach (var dialog in currentSingleDialogs)
         {
-            Destroy(dialog);
+            Destroy(dialog.gameObject);
         }
+        currentSingleDialogs.Clear();
 
         // 创建新的对话条目
         for (int i = 0; i < processedDialogs.Count; i++)
@@ -48,6 +49,8 @@ public class ProcessedManager : MonoBehaviour
             var singleDialogItem = Instantiate(singleDialogPrefab, dialogsContainer);
             singleDialogItem.SetSpeaker(dialog.Speaker);
             singleDialogItem.SetContent(dialog.Content);
+
+            currentSingleDialogs.Add(singleDialogItem);
         }
     }
 

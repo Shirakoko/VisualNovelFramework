@@ -28,7 +28,7 @@ public class ChoiceManager : MonoBehaviour
         // 清除旧的选择按钮
         foreach (var button in currentChoiceButtons)
         {
-            Destroy(button);
+            Destroy(button.gameObject);
         }
         currentChoiceButtons.Clear();
 
