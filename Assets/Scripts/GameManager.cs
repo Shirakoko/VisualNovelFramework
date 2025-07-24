@@ -72,9 +72,9 @@ public class GameManager : MonoBehaviour
 
         // 快速跳转
         GUILayout.Label("<color=cyan>快速跳转</color>", new GUIStyle(GUI.skin.label) { richText = true });
-        GUILayout.BeginHorizontal(GUI.skin.box);
+        GUILayout.BeginHorizontal();
         debugTargetNodeId = GUILayout.TextField(debugTargetNodeId, GUILayout.Width(200));
-        GUILayout.FlexibleSpace();
+        // GUILayout.FlexibleSpace();
         if (GUILayout.Button("跳转", GUILayout.Width(60))) { DebugJumpToNode(debugTargetNodeId); }
         GUILayout.EndHorizontal();
 
