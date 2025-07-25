@@ -12,7 +12,6 @@ public class SaveData
     public string saveTime; // 存档时间
     public string previewText; // 存档预览文本
     public List<(string Speaker, string Content)> processedDialogs; // 已处理的对话历史
-    // public string backgroundId; // 背景Id
 }
 
 
@@ -50,7 +49,7 @@ public class SaveManager : MonoBehaviour
     [SerializeField]
     private Text[] saveTimes = new Text[MAX_SAVE_COUNT]; // 存档时间
 
-    [Header("截图设置")]
+    [Header("截图尺寸设置")]
     [SerializeField]
     private int screenshotWidth = 256;
     [SerializeField]
@@ -88,7 +87,7 @@ public class SaveManager : MonoBehaviour
     {
         savePanel.SetActive(true);
         UpdateSaveUI();
-        //TODO 根据isInput显示指定页签
+        //TODO 根据isInput高亮指定页签
     }
 
     /** 隐藏存档面板 */

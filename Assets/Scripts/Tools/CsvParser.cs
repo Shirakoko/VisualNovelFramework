@@ -7,8 +7,6 @@ public static class StoryCsvParser
     /** 最少字段个数 */
     public const int MIN_FIELD_COUNT = 5;
 
-    /** */
-
     public static StoryTree ParseCsvToStory(string csvText)
     {
         var lines = csvText.Split('\n')
