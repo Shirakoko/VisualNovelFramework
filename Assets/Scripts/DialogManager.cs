@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -40,6 +41,9 @@ public class DialogManager : MonoBehaviour
 
     private Coroutine typingCoroutine; // 打字效果协程
 
+    private static string AUTO_ON = "AUTO(On)";
+    private static string AUTO_OFF = "AUTO(Off)";
+
     private void Awake()
     {
         autoButtonText = autoButton.GetComponentInChildren<Text>();
@@ -50,13 +54,13 @@ public class DialogManager : MonoBehaviour
         // 绑定下一句按钮的响应函数
         nextButton.onClick.AddListener(GameManager.Instance.NextDialogLine);
         autoButton.onClick.AddListener(ToggleAutoPlay);
-        autoButtonText.text = isAutoPlay ? "Auto(On)" : "Auto(Off)";
+        autoButtonText.text = isAutoPlay ? AUTO_ON : AUTO_OFF;
     }
 
     private void ToggleAutoPlay()
     {
         isAutoPlay = !isAutoPlay;
-        autoButtonText.text = isAutoPlay ? "Auto(On)" : "Auto(Off)";
+        autoButtonText.text = isAutoPlay ? AUTO_ON : AUTO_OFF;
 
          // 如果开启自动播放且当前没有在打字，需要调用下一句
         if (isAutoPlay && !isTyping)
