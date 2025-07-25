@@ -40,7 +40,8 @@ public class GameManager : MonoBehaviour
     public Node CurrentNode => currentNode;
     /** 当前对话Id */
     [HideInInspector]
-    public int currentDialogIndex;
+    private int currentDialogIndex;
+    public int CurrentDialogIndex => currentDialogIndex;
 
     /** 记录已经走过的节点 */
     [HideInInspector]
@@ -82,10 +83,10 @@ public class GameManager : MonoBehaviour
     }
 
     /** 执行节点 */
-    public void ProcessNode(Node node)
+    public void ProcessNode(Node node, int dialogIndex = 0)
     {
         currentNode = node;
-        currentDialogIndex = 0;
+        currentDialogIndex = dialogIndex;
 
         // 更新视觉元素
         backgroundManager.SetBackground(node.backgroundId);
@@ -99,7 +100,7 @@ public class GameManager : MonoBehaviour
         }
         else if (node is ChoiceNode choiceNode)
         {
-            dialogManager.HideDialog();
+            // dialogManager.HideDialog();
             choiceManager.ShowChoices(choiceNode);
         }
     }
@@ -111,8 +112,6 @@ public class GameManager : MonoBehaviour
         {
             var line = node.dialogs[currentDialogIndex];
             dialogManager.DisplayDialog(line.speakerDisplayName, line.content);
-            // 把当前对话加入已经历的对话
-            processedDialogs.Add((Speaker: line.speakerDisplayName, Content: line.content));
 
         }
         else
@@ -126,6 +125,10 @@ public class GameManager : MonoBehaviour
     {
         if (currentNode is DialogNode dialogNode)
         {
+            // 把前一句对话加入已经历的对话
+            var line = dialogNode.dialogs[currentDialogIndex];
+            processedDialogs.Add((Speaker: line.speakerDisplayName, Content: line.content));
+
             currentDialogIndex++;
             ShowCurrentDialog(dialogNode);
         }

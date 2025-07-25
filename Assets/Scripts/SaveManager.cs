@@ -2,16 +2,31 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
+[Serializable]
+public class DialogRecord
+{
+    public string Speaker;
+    public string Content;
+
+    public DialogRecord(string speaker, string content)
+    {
+        Speaker = speaker;
+        Content = content;
+    }
+}
+
+[System.Serializable]
 public class SaveData
 {
     public string nodeId; // 节点Id
     public int dialogIndex; // 对话索引
     public string saveTime; // 存档时间
     public string previewText; // 存档预览文本
-    public List<(string Speaker, string Content)> processedDialogs; // 已处理的对话历史
+    public List<DialogRecord> processedDialogs; // 已处理的对话历史
 }
 
 
@@ -83,7 +98,7 @@ public class SaveManager : MonoBehaviour
     }
 
     /** 显示存档面板 */
-    private void ShowSavePanel(bool isInput)
+    private void ShowSavePanel()
     {
         savePanel.SetActive(true);
         UpdateSaveUI();
@@ -98,14 +113,15 @@ public class SaveManager : MonoBehaviour
         pendingScreenshot = null;
         savePanel.SetActive(false);
     }
-    
+
     #region 点击打开存档按钮截图
     public void OnSaveButtonClicked(bool isInput)
     {
-        StartCoroutine(CaptureBeforeSavePanel(isInput));
+        this.isInput = isInput;
+        StartCoroutine(CaptureBeforeSavePanel());
     }
 
-    private IEnumerator CaptureBeforeSavePanel(bool isInput)
+    private IEnumerator CaptureBeforeSavePanel()
     {
         // 等待一帧确保UI渲染完成
         yield return new WaitForEndOfFrame();
@@ -116,7 +132,7 @@ public class SaveManager : MonoBehaviour
         pendingScreenshot.Apply();
 
         // 打开存档界面
-        ShowSavePanel(isInput);
+        ShowSavePanel();
     }
     #endregion
 
@@ -196,25 +212,26 @@ public class SaveManager : MonoBehaviour
         File.WriteAllBytes(screenshotPath, bytes);
 
         var currentNode = GameManager.Instance.CurrentNode;
+        var currentIndex = GameManager.Instance.CurrentDialogIndex;
 
         // 生成其他数据
         SaveData data = new SaveData
         {
             nodeId = currentNode.nodeId,
-            dialogIndex = GameManager.Instance.currentDialogIndex,
+            dialogIndex = currentIndex,
             saveTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
-            processedDialogs = new List<(string Speaker, string Content)>(GameManager.Instance.processedDialogs),
+            processedDialogs = DialogDataConverter.ToDialogRecords(GameManager.Instance.processedDialogs)
         };
 
         // 生成预览文本
         if (currentNode is DialogNode dialogNode)
         {
-            var dialog = dialogNode.dialogs[Mathf.Min(GameManager.Instance.currentDialogIndex, dialogNode.dialogs.Count - 1)];
+            var dialog = dialogNode.dialogs[Mathf.Min(currentIndex, dialogNode.dialogs.Count - 1)];
             data.previewText = $"{dialog.speakerDisplayName}: {ShortenText(dialog.content, 22)}";
         }
         else if (currentNode is ChoiceNode choiceNode)
         {
-            data.previewText = $"选择: {ShortenText(choiceNode.questionText, 22)}";
+            data.previewText = $"面临选择: {ShortenText(choiceNode.questionText, 22)}";
         }
 
         string jsonData = JsonUtility.ToJson(data);
@@ -230,13 +247,12 @@ public class SaveManager : MonoBehaviour
         SaveData data = LoadSaveData(slotIndex);
         if (data != null)
         {
-            GameManager.Instance.processedDialogs = new List<(string Speaker, string Content)>(data.processedDialogs);
+            GameManager.Instance.processedDialogs = DialogDataConverter.ToTuples(data.processedDialogs);
 
             var node = GameManager.Instance.CurrentStory.GetNodeById(data.nodeId);
             if (node != null)
             {
-                GameManager.Instance.currentDialogIndex = data.dialogIndex;
-                GameManager.Instance.ProcessNode(node);
+                GameManager.Instance.ProcessNode(node, data.dialogIndex);
             }
 
             HideSavePanel();
@@ -267,5 +283,20 @@ public class SaveManager : MonoBehaviour
 
         result.Apply();
         return result;
+    }
+}
+
+public static class DialogDataConverter
+{
+    /** 将元组列表转换为DialogRecord列表 */
+    public static List<DialogRecord> ToDialogRecords(List<(string Speaker, string Content)> tuples)
+    {
+        return tuples.Select(t => new DialogRecord(t.Speaker, t.Content)).ToList();
+    }
+
+    /** 将DialogRecord列表转换为元组列表 */
+    public static List<(string Speaker, string Content)> ToTuples(List<DialogRecord> records)
+    {
+        return records.Select(r => (r.Speaker, r.Content)).ToList();
     }
 }

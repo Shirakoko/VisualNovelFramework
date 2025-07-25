@@ -235,7 +235,6 @@ MonoBehaviour:
   processedManager: {fileID: 2070705868}
   saveManager: {fileID: 124095801}
   showDebugPanel: 1
-  currentDialogIndex: 0
 --- !u!4 &102750501
 Transform:
   m_ObjectHideFlags: 0
@@ -528,6 +527,8 @@ MonoBehaviour:
   - {fileID: 1328663746}
   - {fileID: 755292354}
   - {fileID: 360330054}
+  screenshotWidth: 144
+  screenshotHeight: 256
 --- !u!1 &139324982
 GameObject:
   m_ObjectHideFlags: 0
@@ -591,7 +592,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &192159246
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1259,7 +1260,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 0, g: 0, b: 0, a: 0.2509804}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:

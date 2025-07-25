@@ -22,7 +22,7 @@ public class DialogManager : MonoBehaviour
     [Header("下一句按钮")]
     public Button nextButton;
 
-    [Header("自动播放按钮")]
+    [Header("自动播放切换按钮")]
     public Button autoButton;
 
     private Text autoButtonText;
