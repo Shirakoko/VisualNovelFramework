@@ -155,7 +155,7 @@ public static class StoryCsvParser
         foreach (var storyNode in nodes.Values)
         {
             story.AddNode(storyNode);
-            Debug.LogWarning($"加入节点: {storyNode.nodeId}, 类型: {storyNode.GetType()}");
+            // Debug.LogWarning($"加入节点: {storyNode.nodeId}, 类型: {storyNode.GetType()}");
         }
 
         return story;

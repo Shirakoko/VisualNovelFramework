@@ -20,8 +20,10 @@ public class GameManager : MonoBehaviour
     public DialogManager dialogManager;
     public ChoiceManager choiceManager;
     public ProcessedManager processedManager;
+    public SaveManager saveManager;
 
     private StoryTree currentStory;
+    public StoryTree CurrentStory => currentStory;
 
     #region 调试字段
     [SerializeField]
@@ -35,11 +37,14 @@ public class GameManager : MonoBehaviour
 
     /** 当前节点 */
     private Node currentNode;
+    public Node CurrentNode => currentNode;
     /** 当前对话Id */
-    private int currentDialogIndex;
+    [HideInInspector]
+    public int currentDialogIndex;
 
     /** 记录已经走过的节点 */
-    private List<(string Speaker, string Content)> processedDialogs = new List<(string Speaker, string Content)>();
+    [HideInInspector]
+    public List<(string Speaker, string Content)> processedDialogs = new List<(string Speaker, string Content)>();
 
     private void Awake()
     {
@@ -65,44 +70,11 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // 运行时调试
-    private void OnGUI()
-    {
-        if (!showDebugPanel || !Application.isPlaying) return;
-
-        GUILayout.BeginArea(new Rect(10, 10, 350, 275), GUI.skin.box);
-        GUILayout.Label("<b>故事调试面板</b>", new GUIStyle(GUI.skin.label) { richText = true, fontSize = 16, alignment = TextAnchor.MiddleCenter });
-
-        // 快速跳转
-        GUILayout.Label("<color=cyan>快速跳转</color>", new GUIStyle(GUI.skin.label) { richText = true });
-        GUILayout.BeginHorizontal();
-        debugTargetNodeId = GUILayout.TextField(debugTargetNodeId, GUILayout.Width(200));
-        // GUILayout.FlexibleSpace();
-        if (GUILayout.Button("跳转", GUILayout.Width(60))) { DebugJumpToNode(debugTargetNodeId); }
-        GUILayout.EndHorizontal();
-
-        // 当前节点
-        GUILayout.Label($"<color=cyan>当前节点</color> <color=yellow>{currentNode?.nodeId ?? "无"}</color>", new GUIStyle(GUI.skin.label) { richText = true });
-
-        // 历史记录
-        GUILayout.Label("<color=cyan>跳转历史</color>", new GUIStyle(GUI.skin.label){ richText = true } );
-        if (jumpHistory.Count > 0)
-        {
-            foreach (var id in jumpHistory)
-            {
-                if (GUILayout.Button(id, GUI.skin.label))
-                {
-                    debugTargetNodeId = id;
-                }
-            }
-        }
-        GUILayout.EndArea();
-    }
-
     /** 开启故事 */
     public void StartStory(StoryTree story)
     {
         processedManager.HideProcessedDialogs();
+        saveManager.HideSavePanel();
 
         currentStory = story;
         currentNode = story.rootNode;
@@ -141,7 +113,7 @@ public class GameManager : MonoBehaviour
             dialogManager.DisplayDialog(line.speakerDisplayName, line.content);
             // 把当前对话加入已经历的对话
             processedDialogs.Add((Speaker: line.speakerDisplayName, Content: line.content));
-            
+
         }
         else
         {
@@ -158,7 +130,7 @@ public class GameManager : MonoBehaviour
             ShowCurrentDialog(dialogNode);
         }
     }
-    
+
 
     /** 下一个节点 */
     public void NextNode()
@@ -182,10 +154,10 @@ public class GameManager : MonoBehaviour
             processedDialogs.Add((Speaker: "面临选择", Content: choiceNode.questionText));
             processedDialogs.Add((Speaker: "你的选择", Content: choiceNode.choices[choiceIndex].choiceText));
             string nextNodeId = choiceNode.choices[choiceIndex].nextNodeId;
-        
+
             if (nextNodeId == null) { Debug.LogWarning($"不存在下一个节点Id"); return; }
             var nextNode = currentStory.GetNodeById(nextNodeId);
-            if (nextNode != null){ ProcessNode(nextNode); }
+            if (nextNode != null) { ProcessNode(nextNode); }
             else { Debug.LogWarning($"下一个节点为null, Id: {nextNodeId}"); }
         }
     }
@@ -194,6 +166,47 @@ public class GameManager : MonoBehaviour
     public void ShowProcessedPanel()
     {
         processedManager.ShowProcessedDialogs(processedDialogs);
+    }
+
+    #region 调试工具相关
+    // 运行时调试
+    private void OnGUI()
+    {
+        if (!showDebugPanel || !Application.isPlaying) return;
+
+        GUILayout.BeginArea(new Rect(10, 10, 350, 275), GUI.skin.box);
+        GUILayout.Label("<b>故事调试面板</b>", new GUIStyle(GUI.skin.label) { richText = true, fontSize = 16, alignment = TextAnchor.MiddleCenter });
+
+        // 快速跳转
+        GUILayout.Label("<color=cyan>快速跳转</color>", new GUIStyle(GUI.skin.label) { richText = true });
+        GUILayout.BeginHorizontal();
+        debugTargetNodeId = GUILayout.TextField(debugTargetNodeId, GUILayout.Width(200));
+        // GUILayout.FlexibleSpace();
+        if (GUILayout.Button("跳转", GUILayout.Width(60))) { DebugJumpToNode(debugTargetNodeId); }
+        GUILayout.EndHorizontal();
+
+        // 当前节点
+        GUILayout.Label($"<color=cyan>当前节点</color> <color=yellow>{currentNode?.nodeId ?? "无"}</color>", new GUIStyle(GUI.skin.label) { richText = true });
+
+        // 历史记录
+        GUILayout.Label("<color=cyan>跳转历史</color>", new GUIStyle(GUI.skin.label) { richText = true });
+        if (jumpHistory.Count > 0)
+        {
+            foreach (var id in jumpHistory)
+            {
+                if (GUILayout.Button(id, GUI.skin.label))
+                {
+                    debugTargetNodeId = id;
+                }
+            }
+        }
+        GUILayout.EndArea();
+    }
+
+    /** 根据背景图Id得到背景图Sprite资源 */
+    public Sprite GetBGSpriteById(string backgroundId)
+    {
+        return backgroundManager.GetBGSpriteById(backgroundId);
     }
 
     // 调试跳转方法
@@ -215,6 +228,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // 添加跳转历史记录
     private void AddToHistory(string nodeId)
     {
         // 如果已经存在，先移除旧记录
@@ -222,13 +236,14 @@ public class GameManager : MonoBehaviour
         {
             jumpHistory.Remove(nodeId);
         }
-        
+
         jumpHistory.AddFirst(nodeId);
-        
+
         // 保持最大记录数
         while (jumpHistory.Count > MAX_HISTORY)
         {
             jumpHistory.RemoveLast();
         }
     }
+    #endregion
 }

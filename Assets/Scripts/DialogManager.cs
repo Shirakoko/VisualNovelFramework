@@ -41,8 +41,8 @@ public class DialogManager : MonoBehaviour
 
     private Coroutine typingCoroutine; // 打字效果协程
 
-    private static string AUTO_ON = "AUTO(On)";
-    private static string AUTO_OFF = "AUTO(Off)";
+    private const string AUTO_ON = "AUTO(On)";
+    private const string AUTO_OFF = "AUTO(Off)";
 
     private void Awake()
     {
