@@ -139,6 +139,9 @@ public class GameManager : MonoBehaviour
         {
             var line = node.dialogs[currentDialogIndex];
             dialogManager.DisplayDialog(line.speakerDisplayName, line.content);
+            // 把当前对话加入已经历的对话
+            processedDialogs.Add((Speaker: line.speakerDisplayName, Content: line.content));
+            
         }
         else
         {
@@ -162,11 +165,6 @@ public class GameManager : MonoBehaviour
     {
         if (currentNode is DialogNode dialogNode)
         {
-            // 把当前节点的所有对话加入已经历的对话
-            foreach(var dialog in dialogNode.dialogs) {
-                processedDialogs.Add((Speaker: dialog.speakerDisplayName, Content: dialog.content));
-            }
-
             string nextNodeId = dialogNode.nextNodeId;
             if (nextNodeId == null) { Debug.LogWarning($"不存在下一个节点Id"); return; }
             var nextNode = currentStory.GetNodeById(nextNodeId);
