@@ -28,7 +28,7 @@ public class GameManager : MonoBehaviour
     #region 调试字段
     [SerializeField]
     [Header("启用调试工具")]
-    private bool showDebugPanel = true;
+    private bool showDebugPanel = false;
 
     private string debugTargetNodeId = "";
     private LinkedList<string> jumpHistory = new LinkedList<string>();

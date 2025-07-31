@@ -46,29 +46,24 @@ public class SaveManager : MonoBehaviour
 
     private bool isInput; // 是否是读取模式
 
+    //TODO 后续希望根据配置动态生成存档槽
     private const int MAX_SAVE_COUNT = 5; // 存档槽个数
 
-    [Header("存档槽按钮")]
-    [SerializeField, Tooltip("不可修改大小")]
-    private Button[] saveButtons = new Button[MAX_SAVE_COUNT]; // 存档按钮
-
-    [Header("存档预览背景图")]
-    [SerializeField]
-    private Image[] previewImages = new Image[MAX_SAVE_COUNT]; // 存档预览背景图
-
-    [Header("存档预览文字")]
-    [SerializeField]
-    private Text[] preViewTexts = new Text[MAX_SAVE_COUNT]; // 存档预览文字
-
-    [Header("存档时间文字")]
-    [SerializeField]
-    private Text[] saveTimes = new Text[MAX_SAVE_COUNT]; // 存档时间
+    [Header("存档槽按钮列表")]
+    [SerializeField, Tooltip("每个存档槽")]
+    private SaveSlot[] saveButtons = new SaveSlot[MAX_SAVE_COUNT]; // 存档按钮
 
     [Header("截图尺寸设置")]
     [SerializeField]
     private int screenshotWidth = 256;
     [SerializeField]
     private int screenshotHeight = 144;
+
+    [Header("存档和读档按钮")]
+    [SerializeField]
+    private Button inputButton;
+    [SerializeField]
+    private Button outputButton;
 
     private Texture2D pendingScreenshot; // 临时截图纹理
 
@@ -91,7 +86,7 @@ public class SaveManager : MonoBehaviour
         for (int i = 0; i < MAX_SAVE_COUNT; i++)
         {
             int index = i; // 闭包问题
-            saveButtons[i].onClick.AddListener(() => { this.OnSaveSlotClicked(index); });
+            saveButtons[i].Button.onClick.AddListener(() => { this.OnSaveSlotClicked(index); });
         }
 
         UpdateSaveUI();
@@ -166,24 +161,23 @@ public class SaveManager : MonoBehaviour
                 byte[] fileData = File.ReadAllBytes(screenshotPath);
                 Texture2D tex = new Texture2D(2, 2);
                 tex.LoadImage(fileData);
-                previewImages[i].sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
-
-                preViewTexts[i].text = data.previewText;
-                saveTimes[i].text = data.saveTime;
+                saveButtons[i].previewImage.sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+                saveButtons[i].previewText.text = data.previewText;
+                saveButtons[i].timeText.text = data.saveTime;
             }
             else if (data != null)
             {
                 // 有存档但截图不存在（使用NONESAVE_ID图片）
-                previewImages[i].sprite = GameManager.Instance.GetBGSpriteById(NONESAVE_ID);
-                preViewTexts[i].text = data.previewText;
-                saveTimes[i].text = data.saveTime;
+                saveButtons[i].previewImage.sprite  = GameManager.Instance.GetBGSpriteById(NONESAVE_ID);
+                saveButtons[i].previewText.text = data.previewText;
+                saveButtons[i].timeText.text = data.saveTime;
             }
             else
             {
                 // 无存档
-                previewImages[i].sprite = GameManager.Instance.GetBGSpriteById(NONESAVE_ID);
-                preViewTexts[i].text = "空存档";
-                saveTimes[i].text = "";
+                saveButtons[i].previewImage.sprite  = GameManager.Instance.GetBGSpriteById(NONESAVE_ID);
+                saveButtons[i].previewText.text = "空存档";
+                saveButtons[i].timeText.text = "";
             }
         }
     }
