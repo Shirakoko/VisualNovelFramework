@@ -163,7 +163,7 @@ public class SaveManager : MonoBehaviour
     {
         if (this.isInput)
         {
-            LoadGame(index);
+            RequestLoadGame(index);
         }
         else
         {
@@ -255,7 +255,7 @@ public class SaveManager : MonoBehaviour
     }
 
     /** 保存存档到指定槽位 */
-    public void RequestSaveGame(int slotIndex)
+    private void RequestSaveGame(int slotIndex)
     {
         SaveData existingData = LoadSaveData(slotIndex);
 
@@ -283,7 +283,7 @@ public class SaveManager : MonoBehaviour
     }
 
     /** 保存存档到指定槽位 */
-    public void ExecuteSaveGame(int slotIndex)
+    private void ExecuteSaveGame(int slotIndex)
     {
         // 缩放截图
         Texture2D scaledScreenshot = ScaleTexture(pendingScreenshot, screenshotWidth, screenshotHeight);
@@ -323,8 +323,14 @@ public class SaveManager : MonoBehaviour
         UpdateSaveUI();
     }
 
+    /** 请求加载指定槽的存档 */
+    private void RequestLoadGame(int slotIndex)
+    {
+        confirmPanel.ShowConfirmPanel(() => { this.ExecuteLoadGame(slotIndex); }, () => { }, $"是否加载存档槽 {slotIndex + 1} 的存档？");
+    }
+
     /** 加载指定槽位的存档 */
-    public void LoadGame(int slotIndex)
+    private void ExecuteLoadGame(int slotIndex)
     {
         SaveData data = LoadSaveData(slotIndex);
         if (data != null)
@@ -342,7 +348,7 @@ public class SaveManager : MonoBehaviour
     }
 
     /** 指定索引的删除按钮的响应函数 */
-    public void RequestDeleteSave(int slotIndex)
+    private void RequestDeleteSave(int slotIndex)
     {
         confirmPanel.ShowConfirmPanel(() => { this.ConfirmDelete(slotIndex); }, () => { this.CancelDelete(); });
     }
