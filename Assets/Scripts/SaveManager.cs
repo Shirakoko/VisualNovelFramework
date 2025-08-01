@@ -65,6 +65,16 @@ public class SaveManager : MonoBehaviour
     [SerializeField]
     private Button outputButton;
 
+    [Header("按钮状态图片")]
+    [SerializeField]
+    private Sprite inputEnabledSprite;
+    [SerializeField]
+    private Sprite inputDisabledSprite;
+    [SerializeField]
+    private Sprite outputEnabledSprite;
+    [SerializeField]
+    private Sprite outputDisabledSprite;
+
     private Texture2D pendingScreenshot; // 临时截图纹理
 
     // 固定截图路径和命名规则
@@ -79,8 +89,12 @@ public class SaveManager : MonoBehaviour
     {
         Debug.Log("持久化数据路径: " + Application.persistentDataPath);
 
-        showInputSaveButton.onClick.AddListener(() => { this.OnSaveButtonClicked(true); });
-        showOutputSaveButton.onClick.AddListener(() => { this.OnSaveButtonClicked(false); });
+        showInputSaveButton.onClick.AddListener(() => { this.OnOpenSaveButtonClicked(true); });
+        showOutputSaveButton.onClick.AddListener(() => { this.OnOpenSaveButtonClicked(false); });
+
+        inputButton.onClick.AddListener(() => { this.OnSaveButtonClicked(true); });
+        outputButton.onClick.AddListener(() => { this.OnSaveButtonClicked(false); });
+
         hideInputSaveButton.onClick.AddListener(this.HideSavePanel);
 
         for (int i = 0; i < MAX_SAVE_COUNT; i++)
@@ -97,7 +111,7 @@ public class SaveManager : MonoBehaviour
     {
         savePanel.SetActive(true);
         UpdateSaveUI();
-        //TODO 根据isInput高亮指定页签
+        UpdateButtonStates();
     }
 
     /** 隐藏存档面板 */
@@ -110,7 +124,8 @@ public class SaveManager : MonoBehaviour
     }
 
     #region 点击打开存档按钮截图
-    public void OnSaveButtonClicked(bool isInput)
+    /** 存档按钮点击事件 */
+    private void OnOpenSaveButtonClicked(bool isInput)
     {
         this.isInput = isInput;
         StartCoroutine(CaptureBeforeSavePanel());
@@ -147,6 +162,31 @@ public class SaveManager : MonoBehaviour
         }
     }
 
+    /** 存档按钮点击事件 */
+    private void OnSaveButtonClicked(bool isInput)
+    {
+        this.isInput = isInput;
+        UpdateButtonStates();
+    }
+
+    /** 更新存档和读档按钮状态 */
+    private void UpdateButtonStates()
+    {
+        if (isInput)
+        {
+            inputButton.image.sprite = inputEnabledSprite;
+            outputButton.image.sprite = outputDisabledSprite;
+        }
+        else
+        {
+            inputButton.image.sprite = inputDisabledSprite;
+            outputButton.image.sprite = outputEnabledSprite;
+        }
+
+        inputButton.interactable = !isInput;
+        outputButton.interactable = isInput;
+    }
+
     /** 更新存档界面UI */
     private void UpdateSaveUI()
     {
@@ -168,14 +208,14 @@ public class SaveManager : MonoBehaviour
             else if (data != null)
             {
                 // 有存档但截图不存在（使用NONESAVE_ID图片）
-                saveButtons[i].previewImage.sprite  = GameManager.Instance.GetBGSpriteById(NONESAVE_ID);
+                saveButtons[i].previewImage.sprite = GameManager.Instance.GetBGSpriteById(NONESAVE_ID);
                 saveButtons[i].previewText.text = data.previewText;
                 saveButtons[i].timeText.text = data.saveTime;
             }
             else
             {
                 // 无存档
-                saveButtons[i].previewImage.sprite  = GameManager.Instance.GetBGSpriteById(NONESAVE_ID);
+                saveButtons[i].previewImage.sprite = GameManager.Instance.GetBGSpriteById(NONESAVE_ID);
                 saveButtons[i].previewText.text = "空存档";
                 saveButtons[i].timeText.text = "";
             }
