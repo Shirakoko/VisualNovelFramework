@@ -16,10 +16,22 @@ public class SaveSlot : MonoBehaviour
     [SerializeField]
     public Text timeText;
 
+    [Header("删除存档按钮")]
+    [SerializeField]
+    private Button deleteButton;
+    public Button DeleteButton => deleteButton;
+
     private Button button;
     public Button Button => button;
+
     void Awake()
     {
         this.button = GetComponent<Button>();
+    }
+
+    /** 设置删除存档的按钮是否可交互 */
+    public void SetDeleteButtonInteractable(bool hasSave)
+    {
+        deleteButton.interactable = hasSave;
     }
 }

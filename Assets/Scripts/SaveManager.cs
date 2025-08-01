@@ -19,7 +19,7 @@ public class DialogRecord
     }
 }
 
-[System.Serializable]
+[Serializable]
 public class SaveData
 {
     public string nodeId; // 节点Id
@@ -53,6 +53,10 @@ public class SaveManager : MonoBehaviour
     [SerializeField, Tooltip("每个存档槽")]
     private SaveSlot[] saveButtons = new SaveSlot[MAX_SAVE_COUNT]; // 存档按钮
 
+    [Header("确认删除存档的弹窗")]
+    [SerializeField]
+    private ConfirmPanel confirmPanel;
+
     [Header("截图尺寸设置")]
     [SerializeField]
     private int screenshotWidth = 256;
@@ -74,6 +78,12 @@ public class SaveManager : MonoBehaviour
     private Sprite outputEnabledSprite;
     [SerializeField]
     private Sprite outputDisabledSprite;
+
+    [Header("按钮文字颜色")]
+    [SerializeField]
+    private Color enabledTextColor;
+    [SerializeField]
+    private Color disabledTextColor;
 
     private Texture2D pendingScreenshot; // 临时截图纹理
 
@@ -101,8 +111,10 @@ public class SaveManager : MonoBehaviour
         {
             int index = i; // 闭包问题
             saveButtons[i].Button.onClick.AddListener(() => { this.OnSaveSlotClicked(index); });
+            saveButtons[i].DeleteButton.onClick.AddListener(() => { this.RequestDeleteSave(index); });
         }
 
+        this.confirmPanel.HideConfirmPanel();
         UpdateSaveUI();
     }
 
@@ -157,8 +169,8 @@ public class SaveManager : MonoBehaviour
         {
             SaveGame(index);
             // 删除临时资源
-            Destroy(pendingScreenshot);
-            pendingScreenshot = null;
+            // Destroy(pendingScreenshot);
+            // pendingScreenshot = null;
         }
     }
 
@@ -175,12 +187,16 @@ public class SaveManager : MonoBehaviour
         if (isInput)
         {
             inputButton.image.sprite = inputEnabledSprite;
+            inputButton.GetComponentInChildren<Text>().color = enabledTextColor;
             outputButton.image.sprite = outputDisabledSprite;
+            outputButton.GetComponentInChildren<Text>().color = disabledTextColor;
         }
         else
         {
             inputButton.image.sprite = inputDisabledSprite;
+            inputButton.GetComponentInChildren<Text>().color = disabledTextColor;
             outputButton.image.sprite = outputEnabledSprite;
+            outputButton.GetComponentInChildren<Text>().color = enabledTextColor;
         }
 
         inputButton.interactable = !isInput;
@@ -195,29 +211,34 @@ public class SaveManager : MonoBehaviour
             SaveData data = LoadSaveData(i);
             string screenshotPath = ScreenshotPath(i);
 
-            if (data != null && File.Exists(screenshotPath))
+            var saveButton = saveButtons[i];
+            var hasSave = data != null;
+            
+            saveButton.SetDeleteButtonInteractable(hasSave);
+
+            if (hasSave && File.Exists(screenshotPath))
             {
                 // 有存档且截图文件存在
                 byte[] fileData = File.ReadAllBytes(screenshotPath);
                 Texture2D tex = new Texture2D(2, 2);
                 tex.LoadImage(fileData);
-                saveButtons[i].previewImage.sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
-                saveButtons[i].previewText.text = data.previewText;
-                saveButtons[i].timeText.text = data.saveTime;
+                saveButton.previewImage.sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+                saveButton.previewText.text = data.previewText;
+                saveButton.timeText.text = data.saveTime;
             }
-            else if (data != null)
+            else if (hasSave)
             {
                 // 有存档但截图不存在（使用NONESAVE_ID图片）
-                saveButtons[i].previewImage.sprite = GameManager.Instance.GetBGSpriteById(NONESAVE_ID);
-                saveButtons[i].previewText.text = data.previewText;
-                saveButtons[i].timeText.text = data.saveTime;
+                saveButton.previewImage.sprite = GameManager.Instance.GetBGSpriteById(NONESAVE_ID);
+                saveButton.previewText.text = data.previewText;
+                saveButton.timeText.text = data.saveTime;
             }
             else
             {
                 // 无存档
-                saveButtons[i].previewImage.sprite = GameManager.Instance.GetBGSpriteById(NONESAVE_ID);
-                saveButtons[i].previewText.text = "空存档";
-                saveButtons[i].timeText.text = "";
+                saveButton.previewImage.sprite = GameManager.Instance.GetBGSpriteById(NONESAVE_ID);
+                saveButton.previewText.text = "空存档";
+                saveButton.timeText.text = "";
             }
         }
     }
@@ -291,6 +312,45 @@ public class SaveManager : MonoBehaviour
 
             HideSavePanel();
         }
+    }
+
+    /** 指定索引的删除按钮的响应函数 */
+    public void RequestDeleteSave(int slotIndex)
+    {
+        confirmPanel.ShowConfirmPanel();
+
+        // 设置确认按钮的回调
+        confirmPanel.ConfirmButton.onClick.RemoveAllListeners();
+        confirmPanel.ConfirmButton.onClick.AddListener(() => { this.ConfirmDelete(slotIndex); });
+
+        // 设置取消按钮的回调
+        confirmPanel.CancelButton.onClick.RemoveAllListeners();
+        confirmPanel.CancelButton.onClick.AddListener(() => { this.CancelDelete(); });
+    }
+
+    private void ConfirmDelete(int slotIndex)
+    {
+        if (slotIndex >= 0 && slotIndex < MAX_SAVE_COUNT)    
+        {
+            // 实际执行删除
+            PlayerPrefs.DeleteKey($"Save_{slotIndex}");
+            
+            // 删除截图文件
+            string screenshotPath = ScreenshotPath(slotIndex);
+            if (File.Exists(screenshotPath))
+            {
+                File.Delete(screenshotPath);
+            }
+            
+            UpdateSaveUI();
+        }
+        
+        confirmPanel.HideConfirmPanel();
+    }
+
+    private void CancelDelete()
+    {
+        confirmPanel.HideConfirmPanel();
     }
 
     /** 超过指定字数的文字将被截断，末尾加上... */
