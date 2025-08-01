@@ -167,7 +167,7 @@ public class SaveManager : MonoBehaviour
         }
         else
         {
-            SaveGame(index);
+            RequestSaveGame(index);
             // 删除临时资源
             // Destroy(pendingScreenshot);
             // pendingScreenshot = null;
@@ -254,9 +254,36 @@ public class SaveManager : MonoBehaviour
         return null;
     }
 
+    /** 保存存档到指定槽位 */
+    public void RequestSaveGame(int slotIndex)
+    {
+        SaveData existingData = LoadSaveData(slotIndex);
+
+        // 如果槽位已有存档，显示确认弹窗
+        if (existingData != null)
+        {
+            confirmPanel.ShowConfirmPanel(
+                () =>
+                {
+                    // 用户确认后执行实际保存
+                    ExecuteSaveGame(slotIndex);
+                },
+                () =>
+                {
+                    // 用户取消，不做任何操作
+                },
+                $"存档槽 {slotIndex + 1} 已有存档，确定要覆盖吗？"
+            );
+        }
+        else
+        {
+            // 槽位为空，直接保存
+            ExecuteSaveGame(slotIndex);
+        }
+    }
 
     /** 保存存档到指定槽位 */
-    public void SaveGame(int slotIndex)
+    public void ExecuteSaveGame(int slotIndex)
     {
         // 缩放截图
         Texture2D scaledScreenshot = ScaleTexture(pendingScreenshot, screenshotWidth, screenshotHeight);
@@ -317,15 +344,7 @@ public class SaveManager : MonoBehaviour
     /** 指定索引的删除按钮的响应函数 */
     public void RequestDeleteSave(int slotIndex)
     {
-        confirmPanel.ShowConfirmPanel();
-
-        // 设置确认按钮的回调
-        confirmPanel.ConfirmButton.onClick.RemoveAllListeners();
-        confirmPanel.ConfirmButton.onClick.AddListener(() => { this.ConfirmDelete(slotIndex); });
-
-        // 设置取消按钮的回调
-        confirmPanel.CancelButton.onClick.RemoveAllListeners();
-        confirmPanel.CancelButton.onClick.AddListener(() => { this.CancelDelete(); });
+        confirmPanel.ShowConfirmPanel(() => { this.ConfirmDelete(slotIndex); }, () => { this.CancelDelete(); });
     }
 
     private void ConfirmDelete(int slotIndex)
