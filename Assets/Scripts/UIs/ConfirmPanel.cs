@@ -38,6 +38,12 @@ public class ConfirmPanel : MonoBehaviour
         this.confirmButton.onClick.AddListener(OnConfirm);
     }
 
+    /// <summary>
+    /// 展示确认弹窗面板
+    /// </summary>
+    /// <param name="confirmAction">确认执行行为</param>
+    /// <param name="cancelAction">取消执行行为</param>
+    /// <param name="informText">面板提示信息</param>
     public void ShowConfirmPanel(Action confirmAction, Action cancelAction, string informText = null)
     {
         if (informText != null)
@@ -56,13 +62,13 @@ public class ConfirmPanel : MonoBehaviour
         this.gameObject.SetActive(false);
     }
     
-    public void OnConfirm()
+    private void OnConfirm()
     {
         onConfirm?.Invoke();
         HideConfirmPanel();
     }
 
-    public void OnCancel()
+    private void OnCancel()
     {
         onCancel?.Invoke();
         HideConfirmPanel();

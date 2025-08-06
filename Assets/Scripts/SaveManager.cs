@@ -55,7 +55,7 @@ public class SaveManager : MonoBehaviour
 
     [Header("确认删除存档的弹窗")]
     [SerializeField]
-    private ConfirmPanel confirmPanel;
+    private ConfirmPanel saveConfirmPanel;
 
     [Header("截图尺寸设置")]
     [SerializeField]
@@ -97,7 +97,7 @@ public class SaveManager : MonoBehaviour
 
     private void Start()
     {
-        Debug.Log("持久化数据路径: " + Application.persistentDataPath);
+        // Debug.Log("持久化数据路径: " + Application.persistentDataPath);
 
         showInputSaveButton.onClick.AddListener(() => { this.OnOpenSaveButtonClicked(true); });
         showOutputSaveButton.onClick.AddListener(() => { this.OnOpenSaveButtonClicked(false); });
@@ -114,7 +114,7 @@ public class SaveManager : MonoBehaviour
             saveButtons[i].DeleteButton.onClick.AddListener(() => { this.RequestDeleteSave(index); });
         }
 
-        this.confirmPanel.HideConfirmPanel();
+        this.saveConfirmPanel.HideConfirmPanel();
         UpdateSaveUI();
     }
 
@@ -262,7 +262,7 @@ public class SaveManager : MonoBehaviour
         // 如果槽位已有存档，显示确认弹窗
         if (existingData != null)
         {
-            confirmPanel.ShowConfirmPanel(
+            saveConfirmPanel.ShowConfirmPanel(
                 () =>
                 {
                     // 用户确认后执行实际保存
@@ -326,7 +326,7 @@ public class SaveManager : MonoBehaviour
     /** 请求加载指定槽的存档 */
     private void RequestLoadGame(int slotIndex)
     {
-        confirmPanel.ShowConfirmPanel(() => { this.ExecuteLoadGame(slotIndex); }, () => { }, $"是否加载存档槽 {slotIndex + 1} 的存档？");
+        saveConfirmPanel.ShowConfirmPanel(() => { this.ExecuteLoadGame(slotIndex); }, () => { }, $"是否加载存档槽 {slotIndex + 1} 的存档？");
     }
 
     /** 加载指定槽位的存档 */
@@ -350,7 +350,7 @@ public class SaveManager : MonoBehaviour
     /** 指定索引的删除按钮的响应函数 */
     private void RequestDeleteSave(int slotIndex)
     {
-        confirmPanel.ShowConfirmPanel(() => { this.ConfirmDelete(slotIndex); }, () => { this.CancelDelete(); });
+        saveConfirmPanel.ShowConfirmPanel(() => { this.ConfirmDelete(slotIndex); }, () => { this.CancelDelete(); });
     }
 
     private void ConfirmDelete(int slotIndex)
@@ -370,12 +370,12 @@ public class SaveManager : MonoBehaviour
             UpdateSaveUI();
         }
         
-        confirmPanel.HideConfirmPanel();
+        saveConfirmPanel.HideConfirmPanel();
     }
 
     private void CancelDelete()
     {
-        confirmPanel.HideConfirmPanel();
+        saveConfirmPanel.HideConfirmPanel();
     }
 
     /** 超过指定字数的文字将被截断，末尾加上... */

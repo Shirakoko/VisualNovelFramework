@@ -43,9 +43,12 @@ public class GameManager : MonoBehaviour
     private int currentDialogIndex;
     public int CurrentDialogIndex => currentDialogIndex;
 
-    /** 记录已经走过的节点 */
+    /** 记录已经走过的对话内容 */
     [HideInInspector]
     public List<(string Speaker, string Content)> processedDialogs = new List<(string Speaker, string Content)>();
+
+    /** 记录已经走过的选择节点Id */
+    public Stack<string> processedChoiceNodes = new Stack<string>();
 
     private void Awake()
     {
@@ -163,10 +166,28 @@ public class GameManager : MonoBehaviour
             processedDialogs.Add((Speaker: "你的选择", Content: choiceNode.choices[choiceIndex].choiceText));
             string nextNodeId = choiceNode.choices[choiceIndex].nextNodeId;
 
+            // 把当前选择节点接入已经历的选择节点
+            processedChoiceNodes.Push(currentNode.nodeId);
+
             if (nextNodeId == null) { Debug.LogWarning("不存在下一个节点Id"); return; }
             var nextNode = currentStory.GetNodeById(nextNodeId);
             if (nextNode != null) { ProcessNode(nextNode); }
             else { Debug.LogWarning($"下一个节点为null, 节点Id: {nextNodeId}"); }
+        }
+    }
+
+    /** 跳转到上一个选择节点 */
+    public void BackToLastChoiceNode()
+    {
+        if (processedChoiceNodes.Count > 0)
+        {
+            var lastChoinceNodeId = processedChoiceNodes.Pop();
+            var lastNode = currentStory.GetNodeById(lastChoinceNodeId);
+            ProcessNode(lastNode);
+        }
+        else
+        {
+            Debug.LogWarning($"当前进度不存在上一个选择节点, 当前节点: {currentNode.nodeId}");
         }
     }
 

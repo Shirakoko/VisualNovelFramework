@@ -25,6 +25,13 @@ public class DialogManager : MonoBehaviour
     [Header("自动播放切换按钮")]
     public Button autoButton;
 
+    [Header("跳转到上一个选择节点按钮")]
+    public Button backToLastChoiceButton;
+
+    [Header("确认跳转上一个选择节点的弹窗")]
+    [SerializeField]
+    private ConfirmPanel backConfirmPanel;
+
     private Text autoButtonText;
 
     [Header("打开自动播放延迟跳转时间")]
@@ -55,6 +62,11 @@ public class DialogManager : MonoBehaviour
         nextButton.onClick.AddListener(GameManager.Instance.NextDialogLine);
         autoButton.onClick.AddListener(ToggleAutoPlay);
         autoButtonText.text = isAutoPlay ? AUTO_ON : AUTO_OFF;
+
+        // 绑定跳转至上一个选择节点按钮的响应函数
+        this.backToLastChoiceButton.onClick.AddListener(this.OnBackToLastButtonClicked);
+
+        this.backConfirmPanel.HideConfirmPanel();
     }
 
     private void ToggleAutoPlay()
@@ -73,6 +85,14 @@ public class DialogManager : MonoBehaviour
     {
         yield return new WaitForSeconds(delayStartAutoPlay);
         GameManager.Instance.NextDialogLine();
+    }
+
+    private void OnBackToLastButtonClicked()
+    {
+        backConfirmPanel.ShowConfirmPanel(() =>
+        {
+            GameManager.Instance.BackToLastChoiceNode();
+        }, () => { }, "确认跳转至上一个选择节点吗？");
     }
 
     /** 显示对话框 */
