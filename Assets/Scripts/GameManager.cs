@@ -125,6 +125,11 @@ public class GameManager : MonoBehaviour
     {
         if (currentNode is DialogNode dialogNode)
         {
+            if (currentDialogIndex >= dialogNode.dialogs.Count)
+            {
+                Debug.LogWarning($"当前已是最后一句对话, 节点Id: {dialogNode.nodeId}");
+                return;
+            }
             // 把前一句对话加入已经历的对话
             var line = dialogNode.dialogs[currentDialogIndex];
             processedDialogs.Add((Speaker: line.speakerDisplayName, Content: line.content));
