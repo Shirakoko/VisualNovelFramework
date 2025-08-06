@@ -163,10 +163,10 @@ public class GameManager : MonoBehaviour
             processedDialogs.Add((Speaker: "你的选择", Content: choiceNode.choices[choiceIndex].choiceText));
             string nextNodeId = choiceNode.choices[choiceIndex].nextNodeId;
 
-            if (nextNodeId == null) { Debug.LogWarning($"不存在下一个节点Id"); return; }
+            if (nextNodeId == null) { Debug.LogWarning("不存在下一个节点Id"); return; }
             var nextNode = currentStory.GetNodeById(nextNodeId);
             if (nextNode != null) { ProcessNode(nextNode); }
-            else { Debug.LogWarning($"下一个节点为null, Id: {nextNodeId}"); }
+            else { Debug.LogWarning($"下一个节点为null, 节点Id: {nextNodeId}"); }
         }
     }
 
