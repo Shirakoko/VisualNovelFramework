@@ -335,15 +335,8 @@ public class SaveManager : MonoBehaviour
         SaveData data = LoadSaveData(slotIndex);
         if (data != null)
         {
-            GameManager.Instance.processedDialogs = DialogDataConverter.ToTuples(data.processedDialogs);
-
-            var node = GameManager.Instance.CurrentStory.GetNodeById(data.nodeId);
-            if (node != null)
-            {
-                GameManager.Instance.ProcessNode(node, data.dialogIndex);
-            }
-
             HideSavePanel();
+            GameManager.Instance.LoadSaveData(data);
         }
     }
 

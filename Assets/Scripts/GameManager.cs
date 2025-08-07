@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -13,6 +12,12 @@ public class GameManager : MonoBehaviour
     [Header("打字间隔")]
     [Tooltip("文本逐个出现的时间间隔（秒）")]
     public float typingSpeed = 0.05f;
+
+    [Header("黑幕")]
+    public ScreenFader screenFader;
+    [Header("黑幕淡入淡出时间")]
+    [SerializeField]
+    private float fadeTime = 0.5f;
 
     [Space(10)]
     public BackgroundManager backgroundManager;
@@ -104,6 +109,7 @@ public class GameManager : MonoBehaviour
         else if (node is ChoiceNode choiceNode)
         {
             // dialogManager.HideDialog();
+            //TODO 对话框显示choiceNode之前的node
             choiceManager.ShowChoices(choiceNode);
         }
     }
@@ -183,11 +189,32 @@ public class GameManager : MonoBehaviour
         {
             var lastChoinceNodeId = processedChoiceNodes.Pop();
             var lastNode = currentStory.GetNodeById(lastChoinceNodeId);
-            ProcessNode(lastNode);
+
+            screenFader.gameObject.SetActive(true);
+            StartCoroutine(screenFader.FadeOutAndIn(() =>
+            {
+                ProcessNode(lastNode);
+            }, this.fadeTime));
         }
         else
         {
             Debug.LogWarning($"当前进度不存在上一个选择节点, 当前节点: {currentNode.nodeId}");
+        }
+    }
+
+    /** 加载指定存档节点 */
+    public void LoadSaveData(SaveData data)
+    {
+        processedDialogs = DialogDataConverter.ToTuples(data.processedDialogs);
+
+        var node = currentStory.GetNodeById(data.nodeId);
+        if (node != null)
+        {
+            screenFader.gameObject.SetActive(true);
+            StartCoroutine(screenFader.FadeOutAndIn(() =>
+            {
+                ProcessNode(node, data.dialogIndex);
+            }, this.fadeTime));
         }
     }
 
