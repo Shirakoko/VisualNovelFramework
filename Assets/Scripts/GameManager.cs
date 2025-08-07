@@ -53,7 +53,7 @@ public class GameManager : MonoBehaviour
     public List<(string Speaker, string Content)> processedDialogs = new List<(string Speaker, string Content)>();
 
     /** 记录已经走过的选择节点Id */
-    public Stack<string> processedChoiceNodes = new Stack<string>();
+    public Stack<Node> processedChoiceNodes = new Stack<Node>();
 
     private void Awake()
     {
@@ -173,7 +173,7 @@ public class GameManager : MonoBehaviour
             string nextNodeId = choiceNode.choices[choiceIndex].nextNodeId;
 
             // 把当前选择节点接入已经历的选择节点
-            processedChoiceNodes.Push(currentNode.nodeId);
+            processedChoiceNodes.Push(currentNode);
 
             if (nextNodeId == null) { Debug.LogWarning("不存在下一个节点Id"); return; }
             var nextNode = currentStory.GetNodeById(nextNodeId);
@@ -187,13 +187,12 @@ public class GameManager : MonoBehaviour
     {
         if (processedChoiceNodes.Count > 0)
         {
-            var lastChoinceNodeId = processedChoiceNodes.Pop();
-            var lastNode = currentStory.GetNodeById(lastChoinceNodeId);
+            var lastChoinceNode = processedChoiceNodes.Pop();
 
             screenFader.gameObject.SetActive(true);
             StartCoroutine(screenFader.FadeOutAndIn(() =>
             {
-                ProcessNode(lastNode);
+                ProcessNode(lastChoinceNode);
             }, this.fadeTime));
         }
         else
