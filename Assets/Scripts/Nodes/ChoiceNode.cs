@@ -16,4 +16,9 @@ public class ChoiceNode : Node
 
     /** 选项列表 */
     public List<Choice> choices = new List<Choice>();
+
+    public ChoiceNode()
+    {
+        nodeType = ENodeType.Choice;
+    }
 }

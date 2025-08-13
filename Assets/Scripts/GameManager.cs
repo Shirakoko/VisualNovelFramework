@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -52,8 +53,14 @@ public class GameManager : MonoBehaviour
     [HideInInspector]
     public List<(string Speaker, string Content)> processedDialogs = new List<(string Speaker, string Content)>();
 
-    /** 记录已经走过的选择节点Id */
-    public Stack<Node> processedChoiceNodes = new Stack<Node>();
+    // 记录所有走过的节点（按顺序）
+    public List<Node> processedNodes = new List<Node>();
+
+    // 记录选择节点的索引（栈顶是最近的选择节点）
+    public Stack<int> processedChoiceNodeIndices = new Stack<int>();
+
+    // 记录对话节点的索引（栈顶是最近的对话节点）
+    public Stack<int> processedDialogNodeIndices = new Stack<int>();
 
     private void Awake()
     {
@@ -91,7 +98,7 @@ public class GameManager : MonoBehaviour
     }
 
     /** 执行节点 */
-    public void ProcessNode(Node node, int dialogIndex = 0)
+    private void ProcessNode(Node node, int dialogIndex = 0, bool isChoiceNodeRetreat = false)
     {
         currentNode = node;
         currentDialogIndex = dialogIndex;
@@ -101,16 +108,26 @@ public class GameManager : MonoBehaviour
         characterManager.UpdateCharacters(node.characters);
 
         // 显示对话或选择
-        if (node is DialogNode DialogNode)
+        if (node is DialogNode dialogNode)
         {
-            ShowCurrentDialog(DialogNode);
+            ShowCurrentDialog(dialogNode);
             choiceManager.HideChoices();
         }
         else if (node is ChoiceNode choiceNode)
         {
-            // dialogManager.HideDialog();
-            //TODO 对话框显示choiceNode之前的node
+
             choiceManager.ShowChoices(choiceNode);
+    
+            // 对话框显示choiceNode之前的dialogNode的内容
+            if (isChoiceNodeRetreat && processedDialogNodeIndices.Count > 0) {
+                var lastDialogNodeIndex = processedDialogNodeIndices.Peek();
+                if (lastDialogNodeIndex < processedNodes.Count)
+                {
+                    var lastDialogNode = processedNodes[lastDialogNodeIndex] as DialogNode;
+                    var lastLine = lastDialogNode.dialogs.Last();
+                    dialogManager.DisplayDialog(lastLine.speakerDisplayName, lastLine.content);
+                }
+            }
         }
     }
 
@@ -121,11 +138,11 @@ public class GameManager : MonoBehaviour
         {
             var line = node.dialogs[currentDialogIndex];
             dialogManager.DisplayDialog(line.speakerDisplayName, line.content);
-
         }
         else
         {
-            NextNode();
+            if (node.nextNodeId == null) { Debug.LogWarning($"当前对话节点{currentNode.nodeId} 不存在下一个节点Id"); return; }
+            NextNode(node.nextNodeId);
         }
     }
 
@@ -150,16 +167,22 @@ public class GameManager : MonoBehaviour
 
 
     /** 下一个节点 */
-    public void NextNode()
+    private void NextNode(string nextNodeId)
     {
-        if (currentNode is DialogNode dialogNode)
+        processedNodes.Add(currentNode);
+
+        if (currentNode.nodeType == ENodeType.Dialog)
         {
-            string nextNodeId = dialogNode.nextNodeId;
-            if (nextNodeId == null) { Debug.LogWarning($"不存在下一个节点Id"); return; }
-            var nextNode = currentStory.GetNodeById(nextNodeId);
-            if (nextNode != null) { ProcessNode(nextNode); }
-            else { Debug.LogWarning($"下一个节点为null, Id: {dialogNode.nextNodeId}"); }
+            processedDialogNodeIndices.Push(processedNodes.Count - 1);
         }
+        else if (currentNode.nodeType == ENodeType.Choice)
+        {
+            processedChoiceNodeIndices.Push(processedNodes.Count - 1);
+        }
+    
+        var nextNode = currentStory.GetNodeById(nextNodeId);
+        if (nextNode != null) { ProcessNode(nextNode); }
+        else { Debug.LogWarning($"下一个节点为null, 节点Id: {nextNodeId}"); }
     }
 
     /** 选择选项 */
@@ -170,29 +193,35 @@ public class GameManager : MonoBehaviour
             // 把当前节点的选项问题和玩家选择都加入已经历的对话
             processedDialogs.Add((Speaker: "面临选择", Content: choiceNode.questionText));
             processedDialogs.Add((Speaker: "你的选择", Content: choiceNode.choices[choiceIndex].choiceText));
+
             string nextNodeId = choiceNode.choices[choiceIndex].nextNodeId;
-
-            // 把当前选择节点接入已经历的选择节点
-            processedChoiceNodes.Push(currentNode);
-
-            if (nextNodeId == null) { Debug.LogWarning("不存在下一个节点Id"); return; }
-            var nextNode = currentStory.GetNodeById(nextNodeId);
-            if (nextNode != null) { ProcessNode(nextNode); }
-            else { Debug.LogWarning($"下一个节点为null, 节点Id: {nextNodeId}"); }
+            if (nextNodeId == null) { Debug.LogWarning($"当前选择节点{currentNode.nodeId} 不存在下一个节点Id"); return; }
+            NextNode(nextNodeId);
         }
     }
 
     /** 跳转到上一个选择节点 */
     public void BackToLastChoiceNode()
     {
-        if (processedChoiceNodes.Count > 0)
+        if (processedChoiceNodeIndices.Count > 0)
         {
-            var lastChoinceNode = processedChoiceNodes.Pop();
+            int targetChoiceIndex = processedChoiceNodeIndices.Pop();
+
+            // 清理processedNodes，截断到目标节点
+            processedNodes = processedNodes.GetRange(0, targetChoiceIndex + 1);
+
+            // 移除所有在目标节点之后的对话索引，比如对话：0,1,3,5,6；选择：2,4，回退到4要移除5、6
+            while (processedDialogNodeIndices.Count > 0 &&
+            processedDialogNodeIndices.Peek() > targetChoiceIndex)
+            {
+                processedDialogNodeIndices.Pop();
+            }
 
             screenFader.gameObject.SetActive(true);
             StartCoroutine(screenFader.FadeOutAndIn(() =>
             {
-                ProcessNode(lastChoinceNode);
+                Node targetNode = processedNodes[targetChoiceIndex]; // 等效于.Last()
+                ProcessNode(targetNode, 0, true); // isChoiceNodeRetreat = true
             }, this.fadeTime));
         }
         else
@@ -212,7 +241,7 @@ public class GameManager : MonoBehaviour
             screenFader.gameObject.SetActive(true);
             StartCoroutine(screenFader.FadeOutAndIn(() =>
             {
-                ProcessNode(node, data.dialogIndex);
+                ProcessNode(node, data.dialogIndex, true); // isChoiceNodeRetreat = true
             }, this.fadeTime));
         }
     }
@@ -272,7 +301,7 @@ public class GameManager : MonoBehaviour
         var node = currentStory?.GetNodeById(nodeId);
         if (node != null)
         {
-            ProcessNode(node);
+            ProcessNode(node, 0, true);
             // 添加到历史记录
             AddToHistory(nodeId);
             Debug.Log($"调试跳转成功 -> {nodeId}");

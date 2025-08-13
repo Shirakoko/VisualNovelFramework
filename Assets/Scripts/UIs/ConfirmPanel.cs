@@ -38,6 +38,11 @@ public class ConfirmPanel : MonoBehaviour
         this.confirmButton.onClick.AddListener(OnConfirm);
     }
 
+    void Start()
+    {
+        this.gameObject.SetActive(false);
+    }
+
     /// <summary>
     /// 展示确认弹窗面板
     /// </summary>

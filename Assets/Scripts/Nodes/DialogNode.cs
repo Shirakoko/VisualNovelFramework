@@ -7,4 +7,9 @@ public class DialogNode : Node
     public List<DialogLine> dialogs = new List<DialogLine>();
     /** 下一节点的nodeId */
     public string nextNodeId;
+
+    public DialogNode()
+    {
+        nodeType = ENodeType.Dialog;
+    }
 }
