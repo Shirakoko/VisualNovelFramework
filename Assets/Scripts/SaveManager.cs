@@ -302,7 +302,7 @@ public class SaveManager : MonoBehaviour
             nodeId = currentNode.nodeId,
             dialogIndex = currentIndex,
             saveTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
-            processedDialogs = DialogDataConverter.ToDialogRecords(GameManager.Instance.processedDialogs)
+            processedDialogs = GameManager.Instance.GetProcessedDialogs()
         };
 
         // 生成预览文本

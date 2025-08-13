@@ -51,7 +51,7 @@ public class GameManager : MonoBehaviour
 
     /** 记录已经走过的对话内容 */
     [HideInInspector]
-    public List<(string Speaker, string Content)> processedDialogs = new List<(string Speaker, string Content)>();
+    private List<(string Speaker, string Content)> processedDialogs = new List<(string Speaker, string Content)>();
 
     // 记录所有走过的节点（按顺序）
     public List<Node> processedNodes = new List<Node>();
@@ -230,6 +230,31 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    /** 计算需要保留的对话条目数 */
+    private int CalculateDialogsToKeep(int targetChoiceIndex)
+    {
+        int count = 0;
+        
+        // 遍历所有已处理节点，直到目标选择节点
+        for (int i = 0; i <= targetChoiceIndex; i++)
+        {
+            Node node = processedNodes[i];
+            
+            if (node is DialogNode dialogNode)
+            {
+                // 每个 DialogNode 贡献其所有对话行
+                count += dialogNode.dialogs.Count;
+            }
+            else if (node is ChoiceNode)
+            {
+                // 每个 ChoiceNode 固定贡献2条记录（问题和选择）
+                count += 2;
+            }
+        }
+        
+        return count;
+    }
+
     /** 加载指定存档节点 */
     public void LoadSaveData(SaveData data)
     {
@@ -250,6 +275,11 @@ public class GameManager : MonoBehaviour
     public void ShowProcessedPanel()
     {
         processedManager.ShowProcessedDialogs(processedDialogs);
+    }
+
+    public List<DialogRecord> GetProcessedDialogs()
+    {
+        return DialogDataConverter.ToDialogRecords(processedDialogs);
     }
 
     #region 调试工具相关
@@ -301,7 +331,7 @@ public class GameManager : MonoBehaviour
         var node = currentStory?.GetNodeById(nodeId);
         if (node != null)
         {
-            ProcessNode(node, 0, true);
+            ProcessNode(node, 0, true); // isChoiceNodeRetreat = true
             // 添加到历史记录
             AddToHistory(nodeId);
             Debug.Log($"调试跳转成功 -> {nodeId}");
