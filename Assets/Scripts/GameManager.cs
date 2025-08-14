@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -200,6 +201,56 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    /** 根据节点索引得到处理过的对话记录 */
+    private List<(string, string)> CalculateAndGetProcessedDialogs(int targetNodeIndex)
+    {
+        int keepCount = 0;
+        for (int i = 0; i < targetNodeIndex; i++)
+        {
+            var node = processedNodes[i];
+            if (node is DialogNode dialogNode)
+            {
+                keepCount += dialogNode.dialogs.Count;
+            }
+            else if (node is ChoiceNode)
+            {
+                keepCount += 2; // 每个 ChoiceNode 固定2条记录
+            }
+        }
+        return processedDialogs.GetRange(0, keepCount);
+    }
+
+    /** 清理索引栈 */
+    private void UpdateIndexStacks(int targetIndex)
+    {
+        // 清理 DialogNode 索引栈
+        while (processedDialogNodeIndices.Count > 0 && 
+            processedDialogNodeIndices.Peek() > targetIndex)
+        {
+            processedDialogNodeIndices.Pop();
+        }
+
+        // 清理 ChoiceNode 索引栈
+        while (processedChoiceNodeIndices.Count > 0 && 
+            processedChoiceNodeIndices.Peek() > targetIndex)
+        {
+            processedChoiceNodeIndices.Pop();
+        }
+    }
+
+    /** 清理所有历史记录（节点、对话、索引栈）到指定位置 */
+    private void TruncateHistoryToIndex(int targetIndex)
+    {
+        // 清理 processedNodes
+        processedNodes = processedNodes.GetRange(0, targetIndex + 1);
+
+        // 清理 processedDialogs
+        processedDialogs = CalculateAndGetProcessedDialogs(targetIndex);
+
+        // 更新索引栈
+        UpdateIndexStacks(targetIndex);
+    }
+
     /** 跳转到上一个选择节点 */
     public void BackToLastChoiceNode()
     {
@@ -207,15 +258,7 @@ public class GameManager : MonoBehaviour
         {
             int targetChoiceIndex = processedChoiceNodeIndices.Pop();
 
-            // 清理processedNodes，截断到目标节点
-            processedNodes = processedNodes.GetRange(0, targetChoiceIndex + 1);
-
-            // 移除所有在目标节点之后的对话索引，比如对话：0,1,3,5,6；选择：2,4，回退到4要移除5、6
-            while (processedDialogNodeIndices.Count > 0 &&
-            processedDialogNodeIndices.Peek() > targetChoiceIndex)
-            {
-                processedDialogNodeIndices.Pop();
-            }
+            TruncateHistoryToIndex(targetChoiceIndex);
 
             screenFader.gameObject.SetActive(true);
             StartCoroutine(screenFader.FadeOutAndIn(() =>
@@ -236,7 +279,7 @@ public class GameManager : MonoBehaviour
         int count = 0;
         
         // 遍历所有已处理节点，直到目标选择节点
-        for (int i = 0; i <= targetChoiceIndex; i++)
+        for (int i = 0; i < targetChoiceIndex; i++)
         {
             Node node = processedNodes[i];
             
@@ -247,7 +290,8 @@ public class GameManager : MonoBehaviour
             }
             else if (node is ChoiceNode)
             {
-                // 每个 ChoiceNode 固定贡献2条记录（问题和选择）
+                // 每个ChoiceNode固定贡献2条记录（问题和选择）
+                // TODO 有空看看怎么规避这个硬编码
                 count += 2;
             }
         }
@@ -282,6 +326,12 @@ public class GameManager : MonoBehaviour
         return DialogDataConverter.ToDialogRecords(processedDialogs);
     }
 
+    /** 根据背景图Id得到背景图Sprite资源 */
+    public Sprite GetBGSpriteById(string backgroundId)
+    {
+        return backgroundManager.GetBGSpriteById(backgroundId);
+    }
+
     #region 调试工具相关
     // 运行时调试
     private void OnGUI()
@@ -296,7 +346,7 @@ public class GameManager : MonoBehaviour
         GUILayout.BeginHorizontal();
         debugTargetNodeId = GUILayout.TextField(debugTargetNodeId, GUILayout.Width(200));
         // GUILayout.FlexibleSpace();
-        if (GUILayout.Button("跳转", GUILayout.Width(60))) { DebugJumpToNode(debugTargetNodeId); }
+        if (GUILayout.Button("跳转", GUILayout.Width(60))) { __DebugJumpToNode(debugTargetNodeId); }
         GUILayout.EndHorizontal();
 
         // 当前节点
@@ -317,33 +367,55 @@ public class GameManager : MonoBehaviour
         GUILayout.EndArea();
     }
 
-    /** 根据背景图Id得到背景图Sprite资源 */
-    public Sprite GetBGSpriteById(string backgroundId)
-    {
-        return backgroundManager.GetBGSpriteById(backgroundId);
-    }
-
     // 调试跳转方法
-    private void DebugJumpToNode(string nodeId)
+    private void __DebugJumpToNode(string nodeId)
     {
         if (string.IsNullOrEmpty(nodeId)) return;
 
         var node = currentStory?.GetNodeById(nodeId);
-        if (node != null)
-        {
-            ProcessNode(node, 0, true); // isChoiceNodeRetreat = true
-            // 添加到历史记录
-            AddToHistory(nodeId);
-            Debug.Log($"调试跳转成功 -> {nodeId}");
-        }
-        else
+        if (node == null)
         {
             Debug.LogError($"节点或故事树不存在: {nodeId}");
         }
+
+        // 定义 Lambda 表达式（函数对象）
+        Action executeJump = () => 
+        {
+            ProcessNode(node, 0, true); // isChoiceNodeRetreat = true
+            __AddToHistory(nodeId);
+            Debug.Log($"调试跳转成功 -> {nodeId}");
+        };
+        
+        int existingIndex = processedNodes.FindIndex(n => n.nodeId == nodeId);
+    
+        // 1. 如果节点已在 processedNodes 中，则回退到该节点
+        if (existingIndex >= 0)
+        {
+            // 清理processedNodes
+            TruncateHistoryToIndex(existingIndex);
+
+            // 跳转到该节点
+            executeJump();
+            return;
+        }
+
+        // 2.如果是全新节点，更新当前节点对话记录并执行跳转
+        if (currentNode is DialogNode dialogNode)
+        {
+            var line = dialogNode.dialogs[currentDialogIndex];
+            processedDialogs.Add((line.speakerDisplayName, line.content));
+        }
+        else if (currentNode is ChoiceNode choiceNode)
+        {
+            // ChoiceNode 固定添加两条记录
+            processedDialogs.Add(("面临选择", choiceNode.questionText));
+            processedDialogs.Add(("你的选择", "[调试跳转]"));
+        }
+        executeJump();
     }
 
     // 添加跳转历史记录
-    private void AddToHistory(string nodeId)
+    private void __AddToHistory(string nodeId)
     {
         // 如果已经存在，先移除旧记录
         if (jumpHistory.Contains(nodeId))
