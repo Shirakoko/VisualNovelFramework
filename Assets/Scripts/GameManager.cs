@@ -119,13 +119,14 @@ public class GameManager : MonoBehaviour
 
             choiceManager.ShowChoices(choiceNode);
     
-            // 对话框显示choiceNode之前的dialogNode的内容
+            // 对话框显示 choiceNode 之前的 dialogNode 的内容
             if (isChoiceNodeRetreat && processedDialogNodeIndices.Count > 0) {
                 var lastDialogNodeIndex = processedDialogNodeIndices.Peek();
                 if (lastDialogNodeIndex < processedNodes.Count)
                 {
                     var lastDialogNode = processedNodes[lastDialogNodeIndex] as DialogNode;
                     var lastLine = lastDialogNode.dialogs.Last();
+                    // TODO 这边可以指定参数不要打字机效果
                     dialogManager.DisplayDialog(lastLine.speakerDisplayName, lastLine.content);
                 }
             }
@@ -378,7 +379,6 @@ public class GameManager : MonoBehaviour
             Debug.LogError($"节点或故事树不存在: {nodeId}");
         }
 
-        // 定义 Lambda 表达式（函数对象）
         Action executeJump = () => 
         {
             ProcessNode(node, 0, true); // isChoiceNodeRetreat = true
